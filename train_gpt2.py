@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 from hellaswag import render_example, iterate_examples
+
+from mamba_ssm import Mamba
 # -----------------------------------------------------------------------------
 
 class CausalSelfAttention(nn.Module):
@@ -72,9 +74,9 @@ class Block(nn.Module):
 class GPTConfig:
     block_size: int = 1024 # max sequence length
     vocab_size: int = 50257 # number of tokens: 50,000 BPE merges + 256 bytes tokens + 1 <|endoftext|> token
-    n_layer: int = 12 # number of layers
-    n_head: int = 12 # number of heads
-    n_embd: int = 768 # embedding dimension
+    n_layer: int = 24 # number of layers
+    n_head: int = 16 # number of heads
+    n_embd: int = 1024 # embedding dimension
 
 class GPT(nn.Module):
 
@@ -82,10 +84,24 @@ class GPT(nn.Module):
         super().__init__()
         self.config = config
 
+        blockList = []
+        
+        for i in range(config.n_layer - 3):
+            if(i % 2 == 0):
+                blockList.append(
+                    Mamba(
+                    d_model=1024,
+                    d_state=64,
+                    d_conv=4,
+                    expand=2)
+                )
+            else:
+                blockList.append(Block(config))
+
         self.transformer = nn.ModuleDict(dict(
             wte = nn.Embedding(config.vocab_size, config.n_embd),
             wpe = nn.Embedding(config.block_size, config.n_embd),
-            h = nn.ModuleList([Block(config) for _ in range(config.n_layer)]),
+            h = nn.ModuleList(blockList),
             ln_f = nn.LayerNorm(config.n_embd),
         ))
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -322,7 +338,7 @@ if torch.cuda.is_available():
 enc = tiktoken.get_encoding("gpt2")
 
 total_batch_size = 524288 # 2**19, ~0.5M, in number of tokens
-B = 64 # micro batch size
+B = 16 # micro batch size
 T = 1024 # sequence length
 assert total_batch_size % (B * T * ddp_world_size) == 0, "make sure total_batch_size is divisible by B * T * ddp_world_size"
 grad_accum_steps = total_batch_size // (B * T * ddp_world_size)

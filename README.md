@@ -28,10 +28,16 @@ This project uses code from the following repositories:
     pip install causal-conv1d>=1.2.0
     cd mamba && pip install -e . && cd ..
     pip install wandb==0.17.1
+    python3 fineweb.py
     ```
-## Setup - Docker
 
 
 -README.me
     This file.
+
+-fineweb.py
+    Provides a script to download the dataset used by train_gpt2.py
+
+-hellaswag.py
+    Evaluation script to test performance of the model
 
