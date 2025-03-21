@@ -1,5 +1,5 @@
 This repo is a hobby project where I explore the usage of the Mamba architecture used in conjunction with transformers for training LLMs. 
-The Mamba architecture is a selective state space mechanism that using convolutions to create a sort of self-attention mechanism found in transformers.
+The Mamba architecture is a selective state space mechanism that uses convolutions to create a sort of self-attention mechanism found in transformers.
 Mamba blocks are advantageous because they require less parameters to function saving memory, have a linear time complexity, and when used with transformers, offer equivalent performance. 
 
 
